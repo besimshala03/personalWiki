@@ -9,8 +9,9 @@ export default function App() {
   return (
     <div className="wiki-layout">
       <header className="wiki-header">
-        <div className="wiki-header-inner">
-          <span className="wiki-logo">📚 Personal Wiki</span>
+        <div className="wiki-logo">
+          <div className="wiki-logo-icon">W</div>
+          Personal Wiki
         </div>
       </header>
 
