@@ -1,114 +1,89 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getFolders, createFolder, deleteFolder } from '../api';
+import { getFolders, createFolder } from '../api';
 
-const SPACES = ['university', 'private', 'work'];
+const SPACES = [
+  { id: 'university', label: 'University', icon: '◆' },
+  { id: 'private',    label: 'Private',    icon: '◆' },
+  { id: 'work',       label: 'Work',       icon: '◆' },
+];
 
-function FolderTree({ folders, parentId = null, activeFolder, onFolderChange, depth = 0 }) {
+function FolderTree({ folders, parentId = null, space, activeFolder, onFolderChange, depth = 0 }) {
   const children = folders.filter(f => f.parent_id === parentId);
-  if (children.length === 0) return null;
+  if (!children.length) return null;
 
   return (
-    <ul className="folder-tree">
-      {children.map(folder => (
-        <li key={folder.id}>
+    <ul className="folder-list">
+      {children.map(f => (
+        <li key={f.id}>
           <button
-            className={`folder-item ${activeFolder?.id === folder.id ? 'active' : ''}`}
-            style={{ paddingLeft: 16 + depth * 14 }}
-            onClick={() => onFolderChange(folder)}
+            className={`folder-btn ${activeFolder?.id === f.id ? 'folder-btn--active' : ''}`}
+            style={{ paddingLeft: 28 + depth * 12 }}
+            onClick={() => onFolderChange(f)}
           >
-            <span className="folder-icon">📁</span>
-            <span className="folder-name">{folder.name}</span>
+            <svg className="folder-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {f.name}
           </button>
-          <FolderTree
-            folders={folders}
-            parentId={folder.id}
-            activeFolder={activeFolder}
-            onFolderChange={onFolderChange}
-            depth={depth + 1}
-          />
+          <FolderTree folders={folders} parentId={f.id} space={space}
+            activeFolder={activeFolder} onFolderChange={onFolderChange} depth={depth + 1} />
         </li>
       ))}
     </ul>
   );
 }
 
-function SpaceSection({ space, activeSpace, activeFolder, onSpaceChange, onFolderChange }) {
-  const isActive = activeSpace === space;
+function SpaceItem({ space, activeSpace, activeFolder, onSpaceChange, onFolderChange }) {
+  const isOpen = activeSpace === space.id;
   const [folders, setFolders] = useState([]);
-  const [showInput, setShowInput] = useState(false);
-  const [newName, setNewName] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState('');
 
-  const load = useCallback(() => getFolders(space).then(setFolders), [space]);
-
+  const load = useCallback(() => getFolders(space.id).then(setFolders), [space.id]);
   useEffect(() => { load(); }, [load]);
 
-  const handleAddFolder = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if (!newName.trim()) return;
-    await createFolder({ name: newName.trim(), space, parent_id: null });
-    setNewName('');
-    setShowInput(false);
-    load();
-  };
-
-  const handleSpaceClick = () => {
-    onSpaceChange(space);
-    onFolderChange(null);
+    if (!name.trim()) return;
+    await createFolder({ name: name.trim(), space: space.id, parent_id: null });
+    setName(''); setAdding(false); load();
   };
 
   return (
-    <div className={`space-section ${isActive ? 'space-section--active' : ''}`}>
-      {/* Space row */}
-      <div className="space-row">
+    <div className={`space-item ${isOpen ? 'space-item--open' : ''}`}>
+      <div className="space-item-row">
         <button
-          className={`space-btn ${isActive && !activeFolder ? 'active' : isActive ? 'space-btn--open' : ''}`}
-          onClick={handleSpaceClick}
+          className={`space-btn ${isOpen && !activeFolder ? 'space-btn--active' : isOpen ? 'space-btn--open' : ''}`}
+          onClick={() => { onSpaceChange(space.id); onFolderChange(null); }}
         >
-          <span>{spaceIcon(space)}</span>
-          <span>{capitalize(space)}</span>
+          <span className="space-dot" data-space={space.id} />
+          {space.label}
         </button>
         <button
-          className="add-folder-btn"
-          title={`New folder in ${capitalize(space)}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (activeSpace !== space) {
-              onSpaceChange(space);
-              onFolderChange(null);
-            }
-            setShowInput(v => !v);
-            setNewName('');
-          }}
+          className="new-folder-btn"
+          title="New folder"
+          onClick={() => { if (!isOpen) { onSpaceChange(space.id); onFolderChange(null); } setAdding(v => !v); setName(''); }}
         >
-          +
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
         </button>
       </div>
 
-      {/* Folders nested inside space */}
-      {isActive && (
-        <div className="space-folders">
+      {isOpen && (
+        <div className="space-children">
           <FolderTree
-            folders={folders}
-            parentId={null}
+            folders={folders} parentId={null} space={space.id}
             activeFolder={activeFolder}
-            onFolderChange={(folder) => {
-              onSpaceChange(space);
-              onFolderChange(folder);
-            }}
+            onFolderChange={(f) => { onSpaceChange(space.id); onFolderChange(f); }}
           />
-
-          {showInput && (
-            <form className="new-folder-form" onSubmit={handleAddFolder}>
-              <input
-                autoFocus
-                className="wiki-input"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                placeholder="Folder name…"
-              />
-              <div className="form-row">
-                <button type="submit" className="btn btn-sm btn-primary">Create</button>
-                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setShowInput(false)}>Cancel</button>
+          {adding && (
+            <form className="folder-add-form" onSubmit={submit}>
+              <input autoFocus className="folder-add-input" value={name}
+                onChange={e => setName(e.target.value)} placeholder="Folder name" />
+              <div className="folder-add-actions">
+                <button type="submit" className="btn-create">Create</button>
+                <button type="button" className="btn-cancel" onClick={() => setAdding(false)}>Cancel</button>
               </div>
             </form>
           )}
@@ -120,23 +95,21 @@ function SpaceSection({ space, activeSpace, activeFolder, onSpaceChange, onFolde
 
 export default function Sidebar({ activeSpace, activeFolder, onSpaceChange, onFolderChange }) {
   return (
-    <aside className="wiki-sidebar">
-      <p className="sidebar-section-label">Spaces</p>
-      {SPACES.map(space => (
-        <SpaceSection
-          key={space}
-          space={space}
-          activeSpace={activeSpace}
-          activeFolder={activeFolder}
-          onSpaceChange={onSpaceChange}
-          onFolderChange={onFolderChange}
-        />
-      ))}
+    <aside className="sidebar">
+      <div className="sidebar-logo">
+        <div className="sidebar-logo-mark">W</div>
+        <span>Personal Wiki</span>
+      </div>
+
+      <nav className="sidebar-nav">
+        <p className="sidebar-section">Spaces</p>
+        {SPACES.map(space => (
+          <SpaceItem key={space.id} space={space}
+            activeSpace={activeSpace} activeFolder={activeFolder}
+            onSpaceChange={onSpaceChange} onFolderChange={onFolderChange}
+          />
+        ))}
+      </nav>
     </aside>
   );
-}
-
-function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-function spaceIcon(s) {
-  return { university: '🎓', private: '🔒', work: '💼' }[s] ?? '📂';
 }
