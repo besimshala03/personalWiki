@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import TopNav from './components/TopNav';
-import FolderBar from './components/FolderBar';
 import SpaceView from './components/SpaceView';
 import { getSpaces } from './api';
 
@@ -40,13 +39,12 @@ export default function App() {
         onSpaceChange={handleSpaceChange}
         onSpacesChanged={loadSpaces}
       />
-      <FolderBar
-        space={activeSpace}
-        activeFolder={activeFolder}
-        onFolderChange={setActiveFolder}
-      />
       <main className="main">
-        <SpaceView space={activeSpace} activeFolder={activeFolder} />
+        <SpaceView
+          space={activeSpace}
+          activeFolder={activeFolder}
+          onFolderChange={setActiveFolder}
+        />
       </main>
     </div>
   );

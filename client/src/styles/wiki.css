@@ -465,10 +465,35 @@ html, body, #root { height: 100%; background: var(--bg); color: var(--t1); font-
 
 /* ── Space View ───────────────────────────────────────── */
 .space-view {
-  padding: 36px 40px 60px;
+  padding: 28px 40px 60px;
   min-height: 100%;
   position: relative;
 }
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.breadcrumb-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font);
+  color: var(--t3);
+  padding: 3px 5px;
+  border-radius: var(--r-sm);
+  transition: background .12s, color .12s;
+}
+
+.breadcrumb-item:hover { background: var(--s2); color: var(--t2); }
+.breadcrumb-item--active { color: var(--t1); font-weight: 500; pointer-events: none; }
+
+.breadcrumb-sep { color: var(--t3); font-size: 12px; user-select: none; }
 
 .view-accent {
   height: 2px;
@@ -681,8 +706,20 @@ a.card-title:hover { color: var(--accent); }
   padding: 2px 7px; border-radius: 20px;
 }
 
-.card-type--link { background: rgba(129,140,248,.12); color: #818cf8; }
-.card-type--file { background: rgba(52,211,153,.12);  color: #34d399; }
+.card-type--link   { background: rgba(129,140,248,.12); color: #818cf8; }
+.card-type--file   { background: rgba(52,211,153,.12);  color: #34d399; }
+.card-type--folder { background: var(--accent-bg); color: var(--accent); }
+
+/* Folder card — clickable, shows open cursor */
+.card--folder { cursor: pointer; }
+.card--folder:hover { border-color: var(--accent); }
+
+.card-folder-icon {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  background: var(--accent-bg);
+  display: flex; align-items: center; justify-content: center;
+}
 
 .card-date { font-size: 11px; color: var(--t3); }
 
