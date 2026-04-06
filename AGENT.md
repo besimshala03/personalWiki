@@ -194,7 +194,9 @@ so both servers must be running during development.
    launchctl unload ~/Library/LaunchAgents/com.besim.personalwiki.plist
    launchctl load  ~/Library/LaunchAgents/com.besim.personalwiki.plist
    ```
-7. **Commit**: one logical commit per feature with a clear message.
+7. **Manual test**: after making changes, the human should verify them locally in the browser and/or with `curl`.
+8. **Commit**: one logical commit per feature with a clear message.
+9. **Push**: once the human has confirmed the change works, push the commit to the GitHub repo at `https://github.com/besimshala03/personalWiki.git`.
 
 ---
 
