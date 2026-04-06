@@ -12,6 +12,12 @@ const post = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Typ
 const patch = (url, data) => fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json);
 const del = (url) => fetch(url, { method: 'DELETE' }).then(json);
 
+function spaceParams(space, folder_id) {
+  const p = new URLSearchParams({ space });
+  if (folder_id !== undefined) p.set('folder_id', folder_id ?? 'null');
+  return p;
+}
+
 // Spaces
 export const getSpaces = () => fetch(`${BASE}/spaces`).then(json);
 export const createSpace = (data) => post(`${BASE}/spaces`, data);
@@ -25,31 +31,19 @@ export const renameFolder = (id, name) => patch(`${BASE}/folders/${id}`, { name 
 export const deleteFolder = (id) => del(`${BASE}/folders/${id}`);
 
 // Links
-export const getLinks = (space, folder_id) => {
-  const p = new URLSearchParams({ space });
-  if (folder_id !== undefined) p.set('folder_id', folder_id ?? 'null');
-  return fetch(`${BASE}/links?${p}`).then(json);
-};
+export const getLinks = (space, folder_id) => fetch(`${BASE}/links?${spaceParams(space, folder_id)}`).then(json);
 export const createLink = (data) => post(`${BASE}/links`, data);
 export const updateLink = (id, data) => patch(`${BASE}/links/${id}`, data);
 export const deleteLink = (id) => del(`${BASE}/links/${id}`);
 
 // Files
-export const getFiles = (space, folder_id) => {
-  const p = new URLSearchParams({ space });
-  if (folder_id !== undefined) p.set('folder_id', folder_id ?? 'null');
-  return fetch(`${BASE}/files?${p}`).then(json);
-};
+export const getFiles = (space, folder_id) => fetch(`${BASE}/files?${spaceParams(space, folder_id)}`).then(json);
 export const uploadFile = (formData) => fetch(`${BASE}/files`, { method: 'POST', body: formData }).then(json);
 export const deleteFile = (id) => del(`${BASE}/files/${id}`);
 export const downloadUrl = (id) => `${BASE}/files/${id}/download`;
 
 // Tasks
-export const getTasks = (space, folder_id) => {
-  const p = new URLSearchParams({ space });
-  if (folder_id !== undefined) p.set('folder_id', folder_id ?? 'null');
-  return fetch(`${BASE}/tasks?${p}`).then(json);
-};
+export const getTasks = (space, folder_id) => fetch(`${BASE}/tasks?${spaceParams(space, folder_id)}`).then(json);
 export const getAllTasks = () => fetch(`${BASE}/tasks/all`).then(json);
 export const createTask = (data) => post(`${BASE}/tasks`, data);
 export const updateTask = (id, data) => patch(`${BASE}/tasks/${id}`, data);

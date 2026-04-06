@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getAllTasks, getFolders, updateTask } from '../api';
-
-function todayKey() {
-  return new Date().toLocaleDateString('en-CA');
-}
+import { todayKey, formatDueDate } from '../utils';
 
 function startOfWeek(date) {
   const copy = new Date(date);
@@ -18,13 +15,6 @@ function endOfWeek(date) {
   const copy = startOfWeek(date);
   copy.setDate(copy.getDate() + 6);
   return copy;
-}
-
-function dateLabel(value) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: 'short',
-  });
 }
 
 function daysRemaining(value) {
@@ -73,7 +63,7 @@ function TaskRow({ task, spacesById, foldersById, onToggle }) {
         <span className="task-row-title">{task.title}</span>
         <span className="task-row-location">{locationLabel(task, spacesById, foldersById)}</span>
       </div>
-      <span className={`task-due ${overdue ? 'overdue' : ''}`}>{dateLabel(task.due_date)}</span>
+      <span className={`task-due ${overdue ? 'overdue' : ''}`}>{formatDueDate(task.due_date)}</span>
       <span className="task-row-remaining">{daysRemaining(task.due_date)}</span>
     </label>
   );

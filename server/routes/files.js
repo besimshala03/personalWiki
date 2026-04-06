@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import { getFiles, getFileById, insertFileRecord } from '../db.js';
 import { UPLOAD_DIR, createStoredFilename, deleteStoredFile } from '../fileStore.js';
+import { parseFolderId } from '../utils.js';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -16,7 +17,7 @@ const router = Router();
 router.get('/', (req, res) => {
   const { space, folder_id } = req.query;
   if (!space) return res.status(400).json({ error: 'space required' });
-  const fid = folder_id === undefined || folder_id === 'null' ? null : parseInt(folder_id);
+  const fid = parseFolderId(folder_id);
   res.json(getFiles({ space, folder_id: fid }));
 });
 

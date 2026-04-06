@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { deleteTask, getAllTasks, getTasks, insertTask, updateTask } from '../db.js';
+import { parseFolderId } from '../utils.js';
 
 const router = Router();
 
 router.get('/', (req, res) => {
   const { space, folder_id } = req.query;
   if (!space) return res.status(400).json({ error: 'space required' });
-  const fid = folder_id === undefined || folder_id === 'null' ? null : parseInt(folder_id, 10);
+  const fid = parseFolderId(folder_id);
   res.json(getTasks({ space, folder_id: fid }));
 });
 

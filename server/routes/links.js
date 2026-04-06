@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { getLinks, createLink, updateLink, deleteLink } from '../db.js';
+import { parseFolderId } from '../utils.js';
 
 const router = Router();
 
 router.get('/', (req, res) => {
   const { space, folder_id } = req.query;
   if (!space) return res.status(400).json({ error: 'space required' });
-  const fid = folder_id === undefined || folder_id === 'null' ? null : parseInt(folder_id);
+  const fid = parseFolderId(folder_id);
   res.json(getLinks({ space, folder_id: fid }));
 });
 
@@ -18,12 +19,12 @@ router.post('/', async (req, res) => {
 });
 
 router.patch('/:id', async (req, res) => {
-  await updateLink(parseInt(req.params.id), req.body);
+  await updateLink(parseInt(req.params.id, 10), req.body);
   res.json({ ok: true });
 });
 
 router.delete('/:id', async (req, res) => {
-  await deleteLink(parseInt(req.params.id));
+  await deleteLink(parseInt(req.params.id, 10));
   res.json({ ok: true });
 });
 

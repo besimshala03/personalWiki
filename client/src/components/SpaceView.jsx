@@ -18,6 +18,7 @@ import {
   updateTask,
   uploadFile,
 } from '../api';
+import { todayKey, formatDueDate } from '../utils';
 
 function formatSize(b) {
   if (!b) return '';
@@ -38,22 +39,11 @@ function mimeIcon(m) {
   return '📄';
 }
 
-function todayKey() {
-  return new Date().toLocaleDateString('en-CA');
-}
-
 function nextSunday() {
   const date = new Date();
   const daysUntilSunday = (7 - date.getDay()) % 7;
   date.setDate(date.getDate() + daysUntilSunday);
   return date.toLocaleDateString('en-CA');
-}
-
-function formatDueDate(value) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: 'short',
-  });
 }
 
 function isOverdue(task) {
@@ -410,7 +400,6 @@ export default function SpaceView({ space, spaces, activeFolder, onFolderChange,
   }, [load]);
 
   const visibleFolders = folders.filter(folder => folder.parent_id === fid);
-  const visibleTasks = tasks;
 
   const breadcrumb = [];
   if (activeFolder) {
@@ -453,7 +442,7 @@ export default function SpaceView({ space, spaces, activeFolder, onFolderChange,
   };
 
   const contentItems = [
-    ...visibleTasks.map(task => ({ ...task, _type: 'task' })),
+    ...tasks.map(task => ({ ...task, _type: 'task' })),
     ...links.map(link => ({ ...link, _type: 'link' })),
     ...files.map(file => ({ ...file, _type: 'file' })),
   ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

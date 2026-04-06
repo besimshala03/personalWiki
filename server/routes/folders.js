@@ -15,12 +15,12 @@ router.post('/', async (req, res) => {
 });
 
 router.patch('/:id', async (req, res) => {
-  await renameFolder(parseInt(req.params.id), req.body.name);
+  await renameFolder(parseInt(req.params.id, 10), req.body.name);
   res.json({ ok: true });
 });
 
 router.delete('/:id', async (req, res) => {
-  await deleteFolder(parseInt(req.params.id));
+  await deleteFolder(parseInt(req.params.id, 10));
   res.json({ ok: true });
 });
 

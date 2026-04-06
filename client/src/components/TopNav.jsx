@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createSpace, updateSpace, deleteSpace, getAllTasks } from '../api';
+import { todayKey } from '../utils';
 import SyncSettings from './SyncSettings';
 
 const PALETTE = ['#818cf8','#34d399','#fbbf24','#f87171','#60a5fa','#a78bfa','#fb923c','#38bdf8','#e879f9','#4ade80'];
@@ -116,10 +117,6 @@ function NewSpaceForm({ spaces, onCreated, onClose }) {
       </form>
     </div>
   );
-}
-
-function todayKey() {
-  return new Date().toLocaleDateString('en-CA');
 }
 
 export default function TopNav({ spaces, activeView, activeSpace, onSpaceChange, onViewChange, onSpacesChanged, taskRefreshToken }) {

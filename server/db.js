@@ -166,22 +166,6 @@ export function getFiles({ space, folder_id }) {
     .sort((a, b) => b.id - a.id);
 }
 
-export async function createFile({ original_name, stored_name, mime_type, size, space, folder_id = null }) {
-  const file = {
-    id: nextId('files'),
-    original_name,
-    stored_name,
-    mime_type,
-    size,
-    space,
-    folder_id,
-    created_at: new Date().toISOString(),
-  };
-  db.data.files.push(file);
-  await db.write();
-  return file;
-}
-
 export async function insertFileRecord({
   original_name,
   stored_name,
