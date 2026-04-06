@@ -1,0 +1,9 @@
+node_modules/
+client/dist/
+uploads/
+*.db
+wiki.json
+.env
+.DS_Store
+wiki.log
+wiki.error.log
