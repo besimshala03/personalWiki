@@ -1,20 +1,12 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { getFiles, createFile, deleteFileRecord, getFileById } from '../db.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+import { getFiles, getFileById, insertFileRecord } from '../db.js';
+import { UPLOAD_DIR, createStoredFilename, deleteStoredFile } from '../fileStore.js';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
+  filename: (req, file, cb) => cb(null, createStoredFilename(file.originalname)),
 });
 
 const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } });
@@ -33,7 +25,7 @@ router.post('/', upload.single('file'), async (req, res) => {
   const { space, folder_id } = req.body;
   if (!space) return res.status(400).json({ error: 'space required' });
 
-  const file = await createFile({
+  const file = await insertFileRecord({
     original_name: req.file.originalname,
     stored_name: req.file.filename,
     mime_type: req.file.mimetype,
@@ -51,10 +43,8 @@ router.get('/:id/download', (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-  const file = await deleteFileRecord(parseInt(req.params.id));
+  const file = await deleteStoredFile(parseInt(req.params.id));
   if (!file) return res.status(404).json({ error: 'not found' });
-  const filePath = path.join(UPLOAD_DIR, file.stored_name);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   res.json({ ok: true });
 });
 

@@ -70,6 +70,7 @@ html, body, #root { height: 100%; background: var(--bg); color: var(--t1); font-
 }
 
 .topnav-spaces { display: flex; align-items: center; gap: 2px; }
+.topnav-actions { margin-left: auto; display: flex; align-items: center; }
 
 /* Space tab wrapper — positions the dropdown menu */
 .space-tab-wrap {
@@ -185,6 +186,7 @@ html, body, #root { height: 100%; background: var(--bg); color: var(--t1); font-
 
 /* New space button + form */
 .new-space-wrap { position: relative; margin-left: 4px; }
+.sync-settings-wrap { position: relative; }
 
 .new-space-btn {
   background: none;
@@ -267,6 +269,217 @@ html, body, #root { height: 100%; background: var(--bg); color: var(--t1); font-
   transition: opacity .12s;
 }
 .new-space-submit:hover { opacity: .85; }
+
+.sync-settings-trigger {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--t2);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  transition: border-color .12s, color .12s, background .12s;
+}
+
+.sync-settings-trigger:hover,
+.sync-settings-trigger--active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.sync-settings {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  padding: 14px;
+  z-index: 220;
+}
+
+.sync-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sync-settings-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t1);
+}
+
+.sync-settings-subtitle {
+  color: var(--t2);
+  margin-top: 3px;
+}
+
+.sync-settings-close {
+  background: none;
+  border: none;
+  color: var(--t3);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sync-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sync-settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--t1);
+  font-weight: 500;
+}
+
+.sync-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--t2);
+}
+
+.sync-settings-input,
+.sync-settings-select {
+  width: 100%;
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--t1);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+}
+
+.sync-settings-input:focus,
+.sync-settings-select:focus {
+  border-color: var(--accent);
+}
+
+.sync-settings-status,
+.sync-settings-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--t2);
+  font-size: 11px;
+}
+
+.sync-settings-path,
+.sync-settings-empty {
+  color: var(--t2);
+}
+
+.sync-settings-error {
+  color: var(--accent);
+}
+
+.sync-settings-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sync-settings-save,
+.sync-settings-run {
+  flex: 1;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+}
+
+.sync-settings-save {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+}
+
+.sync-settings-run {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  color: var(--t1);
+}
+
+.sync-settings-save:disabled,
+.sync-settings-run:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.sync-settings-log {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.sync-settings-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.sync-settings-log-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: start;
+  background: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 9px;
+}
+
+.sync-settings-log-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sync-settings-log-copy strong {
+  color: var(--t1);
+  font-size: 12px;
+}
+
+.sync-settings-log-copy span,
+.sync-settings-log-copy em,
+.sync-settings-log-item time {
+  color: var(--t2);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.sync-log-badge {
+  align-self: start;
+  background: var(--accent-bg);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  padding: 3px 6px;
+  text-transform: uppercase;
+}
 
 /* ── Folder Bar ───────────────────────────────────────── */
 .folderbar {

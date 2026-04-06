@@ -10,6 +10,8 @@ import spacesRouter from './routes/spaces.js';
 import foldersRouter from './routes/folders.js';
 import linksRouter from './routes/links.js';
 import filesRouter from './routes/files.js';
+import syncRouter from './routes/sync.js';
+import { initializeSync } from './sync.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -22,6 +24,7 @@ app.use('/api/spaces', spacesRouter);
 app.use('/api/folders', foldersRouter);
 app.use('/api/links', linksRouter);
 app.use('/api/files', filesRouter);
+app.use('/api/sync', syncRouter);
 
 // Serve React frontend
 const CLIENT_DIST = path.join(__dirname, '..', 'client', 'dist');
@@ -32,4 +35,8 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Personal Wiki running at http://localhost:${PORT}`);
+});
+
+initializeSync().catch((error) => {
+  console.error('Failed to initialize sync watcher:', error);
 });

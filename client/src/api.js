@@ -1,5 +1,13 @@
 const BASE = '/api';
 const json = (r) => r.json();
+const requestJson = async (url, options) => {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Request failed');
+  }
+  return data;
+};
 const post = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json);
 const patch = (url, data) => fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json);
 const del = (url) => fetch(url, { method: 'DELETE' }).then(json);
@@ -35,3 +43,12 @@ export const getFiles = (space, folder_id) => {
 export const uploadFile = (formData) => fetch(`${BASE}/files`, { method: 'POST', body: formData }).then(json);
 export const deleteFile = (id) => del(`${BASE}/files/${id}`);
 export const downloadUrl = (id) => `${BASE}/files/${id}/download`;
+
+// Sync
+export const getSyncStatus = () => requestJson(`${BASE}/sync/status`);
+export const saveSyncConfig = (data) => requestJson(`${BASE}/sync/config`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data),
+});
+export const runSyncNow = () => requestJson(`${BASE}/sync/run`, { method: 'POST' });

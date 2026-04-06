@@ -16,6 +16,12 @@ const defaultData = {
   folders: [],
   links: [],
   files: [],
+  sync: {
+    enabled: false,
+    onedrive_path: '',
+    space: 'university',
+    last_run: null,
+  },
   _seq: { folders: 0, links: 0, files: 0, spaces: 3 },
 };
 
@@ -25,6 +31,11 @@ export const db = await JSONFilePreset(DB_PATH, defaultData);
 if (!db.data.spaces) {
   db.data.spaces = DEFAULT_SPACES;
   if (!db.data._seq.spaces) db.data._seq.spaces = 3;
+  await db.write();
+}
+
+if (!db.data.sync) {
+  db.data.sync = { ...defaultData.sync };
   await db.write();
 }
 
@@ -40,6 +51,10 @@ function slugify(name) {
 // ── Spaces ────────────────────────────────────────────────
 export function getSpaces() {
   return db.data.spaces;
+}
+
+export function getSpaceById(id) {
+  return db.data.spaces.find(s => s.id === id) ?? null;
 }
 
 export async function createSpace({ name, color }) {
@@ -73,6 +88,10 @@ export async function deleteSpace(id) {
 // ── Folders ──────────────────────────────────────────────
 export function getFoldersBySpace(space) {
   return db.data.folders.filter(f => f.space === space);
+}
+
+export function getFolderById(id) {
+  return db.data.folders.find(f => f.id === id) ?? null;
 }
 
 export async function createFolder({ name, space, parent_id = null }) {
@@ -132,7 +151,41 @@ export function getFiles({ space, folder_id }) {
 }
 
 export async function createFile({ original_name, stored_name, mime_type, size, space, folder_id = null }) {
-  const file = { id: nextId('files'), original_name, stored_name, mime_type, size, space, folder_id, created_at: new Date().toISOString() };
+  const file = {
+    id: nextId('files'),
+    original_name,
+    stored_name,
+    mime_type,
+    size,
+    space,
+    folder_id,
+    created_at: new Date().toISOString(),
+  };
+  db.data.files.push(file);
+  await db.write();
+  return file;
+}
+
+export async function insertFileRecord({
+  original_name,
+  stored_name,
+  mime_type,
+  size,
+  space,
+  folder_id = null,
+  source_mtime = null,
+}) {
+  const file = {
+    id: nextId('files'),
+    original_name,
+    stored_name,
+    mime_type,
+    size,
+    space,
+    folder_id,
+    source_mtime,
+    created_at: new Date().toISOString(),
+  };
   db.data.files.push(file);
   await db.write();
   return file;
@@ -147,4 +200,37 @@ export async function deleteFileRecord(id) {
 
 export function getFileById(id) {
   return db.data.files.find(f => f.id === id) ?? null;
+}
+
+export function findFileByName({ space, folder_id = null, original_name }) {
+  return db.data.files.find(file =>
+    file.space === space &&
+    file.original_name === original_name &&
+    file.folder_id === folder_id,
+  ) ?? null;
+}
+
+export function getSyncConfig() {
+  return { ...defaultData.sync, ...db.data.sync };
+}
+
+export async function updateSyncConfig({ enabled, onedrive_path, space }) {
+  const current = getSyncConfig();
+  db.data.sync = {
+    ...current,
+    enabled: enabled ?? current.enabled,
+    onedrive_path: onedrive_path ?? current.onedrive_path,
+    space: space ?? current.space,
+  };
+  await db.write();
+  return db.data.sync;
+}
+
+export async function setSyncLastRun(lastRun) {
+  db.data.sync = {
+    ...getSyncConfig(),
+    last_run: lastRun,
+  };
+  await db.write();
+  return db.data.sync;
 }

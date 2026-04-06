@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createSpace, updateSpace, deleteSpace } from '../api';
+import SyncSettings from './SyncSettings';
 
 const PALETTE = ['#818cf8','#34d399','#fbbf24','#f87171','#60a5fa','#a78bfa','#fb923c','#38bdf8','#e879f9','#4ade80'];
 
@@ -120,6 +121,7 @@ function NewSpaceForm({ spaces, onCreated, onClose }) {
 export default function TopNav({ spaces, activeSpace, onSpaceChange, onSpacesChanged }) {
   const [menuFor, setMenuFor] = useState(null); // space id
   const [showNew, setShowNew] = useState(false);
+  const [showSync, setShowSync] = useState(false);
 
   return (
     <header className="topnav">
@@ -182,6 +184,18 @@ export default function TopNav({ spaces, activeSpace, onSpaceChange, onSpacesCha
           )}
         </div>
       </nav>
+
+      <div className="topnav-actions">
+        <div className="sync-settings-wrap">
+          <button
+            className={`sync-settings-trigger ${showSync ? 'sync-settings-trigger--active' : ''}`}
+            onClick={() => { setShowSync(v => !v); setMenuFor(null); setShowNew(false); }}
+          >
+            Sync
+          </button>
+          {showSync && <SyncSettings spaces={spaces} onClose={() => setShowSync(false)} />}
+        </div>
+      </div>
     </header>
   );
 }
