@@ -43,10 +43,6 @@ wiki/
 └── install.sh               # One-shot installer: installs deps, builds, loads agent
 ```
 
-> **Stale files**: `client/src/components/` still contains `AddLinkForm.jsx`,
-> `FileList.jsx`, `FileUpload.jsx`, `LinkList.jsx`, `Sidebar.jsx`, and
-> `FolderBar.jsx` — these are no longer imported anywhere and can be deleted.
-
 Feature specs live at the repo root while they are being worked on. Once an agent
 finishes implementing a feature, move its spec into `Completed Features/` so future
 agents know it has already been delivered.
