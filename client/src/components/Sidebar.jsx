@@ -1,20 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { getFolders, createFolder, renameFolder, deleteFolder } from '../api';
+import React, { useEffect, useState, useCallback } from 'react';
+import { getFolders, createFolder, deleteFolder } from '../api';
+
+const SPACES = ['university', 'private', 'work'];
 
 function FolderTree({ folders, parentId = null, activeFolder, onFolderChange, depth = 0 }) {
   const children = folders.filter(f => f.parent_id === parentId);
   if (children.length === 0) return null;
 
   return (
-    <ul className="folder-tree" style={{ paddingLeft: depth === 0 ? 0 : 16 }}>
+    <ul className="folder-tree">
       {children.map(folder => (
         <li key={folder.id}>
           <button
             className={`folder-item ${activeFolder?.id === folder.id ? 'active' : ''}`}
+            style={{ paddingLeft: 16 + depth * 14 }}
             onClick={() => onFolderChange(folder)}
           >
             <span className="folder-icon">📁</span>
-            {folder.name}
+            <span className="folder-name">{folder.name}</span>
           </button>
           <FolderTree
             folders={folders}
@@ -29,92 +32,106 @@ function FolderTree({ folders, parentId = null, activeFolder, onFolderChange, de
   );
 }
 
-export default function Sidebar({ spaces, activeSpace, activeFolder, onSpaceChange, onFolderChange }) {
+function SpaceSection({ space, activeSpace, activeFolder, onSpaceChange, onFolderChange }) {
+  const isActive = activeSpace === space;
   const [folders, setFolders] = useState([]);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [showNewFolder, setShowNewFolder] = useState(false);
-  const [parentForNew, setParentForNew] = useState(null);
+  const [showInput, setShowInput] = useState(false);
+  const [newName, setNewName] = useState('');
 
-  const load = () => getFolders(activeSpace).then(setFolders);
+  const load = useCallback(() => getFolders(space).then(setFolders), [space]);
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSpace]);
+  useEffect(() => { load(); }, [load]);
 
-  const handleCreateFolder = async (e) => {
+  const handleAddFolder = async (e) => {
     e.preventDefault();
-    if (!newFolderName.trim()) return;
-    await createFolder({ name: newFolderName.trim(), space: activeSpace, parent_id: parentForNew });
-    setNewFolderName('');
-    setShowNewFolder(false);
-    setParentForNew(null);
+    if (!newName.trim()) return;
+    await createFolder({ name: newName.trim(), space, parent_id: null });
+    setNewName('');
+    setShowInput(false);
     load();
   };
 
-  const handleDeleteFolder = async (e, id) => {
-    e.stopPropagation();
-    if (!confirm('Delete this folder and all its contents?')) return;
-    await deleteFolder(id);
-    if (activeFolder?.id === id) onFolderChange(null);
-    load();
+  const handleSpaceClick = () => {
+    onSpaceChange(space);
+    onFolderChange(null);
   };
 
   return (
-    <aside className="wiki-sidebar">
-      <nav className="space-nav">
-        <p className="sidebar-section-label">Spaces</p>
-        {spaces.map(space => (
-          <button
-            key={space}
-            className={`space-btn ${activeSpace === space ? 'active' : ''}`}
-            onClick={() => onSpaceChange(space)}
-          >
-            {spaceIcon(space)} {capitalize(space)}
-          </button>
-        ))}
-      </nav>
-
-      <div className="folder-nav">
-        <div className="sidebar-section-header">
-          <p className="sidebar-section-label">Folders</p>
-          <button
-            className="icon-btn"
-            title="New folder"
-            onClick={() => { setShowNewFolder(v => !v); setParentForNew(activeFolder?.id ?? null); }}
-          >+</button>
-        </div>
-
+    <div className={`space-section ${isActive ? 'space-section--active' : ''}`}>
+      {/* Space row */}
+      <div className="space-row">
         <button
-          className={`folder-item root-item ${!activeFolder ? 'active' : ''}`}
-          onClick={() => onFolderChange(null)}
+          className={`space-btn ${isActive && !activeFolder ? 'active' : isActive ? 'space-btn--open' : ''}`}
+          onClick={handleSpaceClick}
         >
-          <span className="folder-icon">🏠</span> Root
+          <span>{spaceIcon(space)}</span>
+          <span>{capitalize(space)}</span>
         </button>
+        <button
+          className="add-folder-btn"
+          title={`New folder in ${capitalize(space)}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (activeSpace !== space) {
+              onSpaceChange(space);
+              onFolderChange(null);
+            }
+            setShowInput(v => !v);
+            setNewName('');
+          }}
+        >
+          +
+        </button>
+      </div>
 
-        <FolderTree
-          folders={folders}
-          parentId={null}
+      {/* Folders nested inside space */}
+      {isActive && (
+        <div className="space-folders">
+          <FolderTree
+            folders={folders}
+            parentId={null}
+            activeFolder={activeFolder}
+            onFolderChange={(folder) => {
+              onSpaceChange(space);
+              onFolderChange(folder);
+            }}
+          />
+
+          {showInput && (
+            <form className="new-folder-form" onSubmit={handleAddFolder}>
+              <input
+                autoFocus
+                className="wiki-input"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                placeholder="Folder name…"
+              />
+              <div className="form-row">
+                <button type="submit" className="btn btn-sm btn-primary">Create</button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setShowInput(false)}>Cancel</button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Sidebar({ activeSpace, activeFolder, onSpaceChange, onFolderChange }) {
+  return (
+    <aside className="wiki-sidebar">
+      <p className="sidebar-section-label">Spaces</p>
+      {SPACES.map(space => (
+        <SpaceSection
+          key={space}
+          space={space}
+          activeSpace={activeSpace}
           activeFolder={activeFolder}
+          onSpaceChange={onSpaceChange}
           onFolderChange={onFolderChange}
         />
-
-        {showNewFolder && (
-          <form className="new-folder-form" onSubmit={handleCreateFolder}>
-            <input
-              autoFocus
-              value={newFolderName}
-              onChange={e => setNewFolderName(e.target.value)}
-              placeholder="Folder name…"
-              className="wiki-input"
-            />
-            <div className="form-row">
-              <button type="submit" className="btn btn-sm">Create</button>
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setShowNewFolder(false)}>Cancel</button>
-            </div>
-          </form>
-        )}
-      </div>
+      ))}
     </aside>
   );
 }

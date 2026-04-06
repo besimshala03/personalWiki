@@ -2,16 +2,9 @@ import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import SpaceView from './components/SpaceView';
 
-const SPACES = ['university', 'private', 'work'];
-
 export default function App() {
   const [activeSpace, setActiveSpace] = useState('university');
-  const [activeFolder, setActiveFolder] = useState(null); // null = root of space
-
-  const handleSpaceChange = (space) => {
-    setActiveSpace(space);
-    setActiveFolder(null);
-  };
+  const [activeFolder, setActiveFolder] = useState(null);
 
   return (
     <div className="wiki-layout">
@@ -23,10 +16,9 @@ export default function App() {
 
       <div className="wiki-body">
         <Sidebar
-          spaces={SPACES}
           activeSpace={activeSpace}
           activeFolder={activeFolder}
-          onSpaceChange={handleSpaceChange}
+          onSpaceChange={setActiveSpace}
           onFolderChange={setActiveFolder}
         />
         <main className="wiki-content">
