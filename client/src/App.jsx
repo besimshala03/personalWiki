@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import Sidebar from './components/Sidebar';
+import TopNav from './components/TopNav';
+import FolderBar from './components/FolderBar';
 import SpaceView from './components/SpaceView';
 
 export default function App() {
   const [activeSpace, setActiveSpace] = useState('university');
   const [activeFolder, setActiveFolder] = useState(null);
 
+  const handleSpaceChange = (space) => {
+    setActiveSpace(space);
+    setActiveFolder(null);
+  };
+
   return (
     <div className="app" data-space={activeSpace}>
-      <Sidebar
-        activeSpace={activeSpace}
+      <TopNav activeSpace={activeSpace} onSpaceChange={handleSpaceChange} />
+      <FolderBar
+        space={activeSpace}
         activeFolder={activeFolder}
-        onSpaceChange={(s) => { setActiveSpace(s); setActiveFolder(null); }}
         onFolderChange={setActiveFolder}
       />
       <main className="main">

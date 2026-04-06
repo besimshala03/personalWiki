@@ -204,7 +204,6 @@ export default function SpaceView({ space, activeFolder }) {
   ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   const title = activeFolder ? activeFolder.name : meta.label;
-  const crumb = activeFolder ? `${meta.label} / ${activeFolder.name}` : null;
 
   return (
     <div
@@ -216,7 +215,6 @@ export default function SpaceView({ space, activeFolder }) {
       {/* ── Header ── */}
       <div className="view-header">
         <div className="view-header-top">
-          {crumb && <p className="view-crumb">{crumb}</p>}
           <h1 className="view-title">{title}</h1>
           <p className="view-count">{allItems.length} item{allItems.length !== 1 ? 's' : ''}</p>
         </div>
