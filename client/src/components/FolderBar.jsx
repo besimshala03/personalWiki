@@ -1,5 +1,71 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getFolders, createFolder, deleteFolder } from '../api';
+import { getFolders, createFolder, renameFolder, deleteFolder } from '../api';
+
+function FolderPill({ folder, isActive, onSelect, onRenamed, onDeleted }) {
+  const [mode, setMode] = useState('view'); // 'view' | 'rename'
+  const [name, setName] = useState(folder.name);
+
+  const submitRename = async (e) => {
+    e?.preventDefault();
+    const trimmed = name.trim();
+    if (trimmed && trimmed !== folder.name) {
+      await renameFolder(folder.id, trimmed);
+      onRenamed();
+    }
+    setMode('view');
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!confirm(`Delete folder "${folder.name}" and all its contents?`)) return;
+    await deleteFolder(folder.id);
+    onDeleted();
+  };
+
+  if (mode === 'rename') {
+    return (
+      <div className={`folder-pill folder-pill--editing ${isActive ? 'folder-pill--active' : ''}`}>
+        <form onSubmit={submitRename} className="folder-rename-form">
+          <input
+            autoFocus
+            className="folder-rename-input"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onBlur={submitRename}
+            onKeyDown={e => { if (e.key === 'Escape') { setName(folder.name); setMode('view'); } }}
+          />
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`folder-pill ${isActive ? 'folder-pill--active' : ''}`}>
+      <button className="folder-pill-name" onClick={() => onSelect(folder)}>
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+          <path d="M1 3.5C1 2.67 1.67 2 2.5 2H4l1 1.5h3.5C9.33 3.5 10 4.17 10 5v3c0 .83-.67 1.5-1.5 1.5h-7C.67 9.5 1 8.83 1 8V3.5z" stroke="currentColor" strokeWidth="1.1"/>
+        </svg>
+        {folder.name}
+      </button>
+      <div className="folder-pill-actions">
+        <button
+          className="folder-pill-action"
+          title="Rename"
+          onClick={(e) => { e.stopPropagation(); setName(folder.name); setMode('rename'); }}
+        >
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+            <path d="M6.5 1l1.5 1.5-5 5H1.5V6L6.5 1z" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button className="folder-pill-action folder-pill-action--danger" title="Delete" onClick={handleDelete}>
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+            <path d="M1.5 1.5l6 6M7.5 1.5l-6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function FolderBar({ space, activeFolder, onFolderChange }) {
   const [folders, setFolders] = useState([]);
@@ -9,7 +75,6 @@ export default function FolderBar({ space, activeFolder, onFolderChange }) {
   const load = useCallback(() => getFolders(space).then(setFolders), [space]);
   useEffect(() => { load(); setAdding(false); setName(''); }, [load]);
 
-  // Show folders at the current level
   const parentId = activeFolder?.parent_id ?? null;
   const visibleFolders = folders.filter(f => f.parent_id === parentId);
 
@@ -20,15 +85,7 @@ export default function FolderBar({ space, activeFolder, onFolderChange }) {
     setName(''); setAdding(false); load();
   };
 
-  const handleDelete = async (e, folder) => {
-    e.stopPropagation();
-    if (!confirm(`Delete folder "${folder.name}" and all its contents?`)) return;
-    await deleteFolder(folder.id);
-    if (activeFolder?.id === folder.id) onFolderChange(null);
-    load();
-  };
-
-  // Build breadcrumb trail
+  // Breadcrumb trail
   const breadcrumb = [];
   if (activeFolder) {
     let cur = activeFolder;
@@ -40,7 +97,6 @@ export default function FolderBar({ space, activeFolder, onFolderChange }) {
 
   return (
     <div className="folderbar">
-      {/* Breadcrumb */}
       <div className="folderbar-crumb">
         <button
           className={`crumb-item ${!activeFolder ? 'crumb-item--active' : ''}`}
@@ -61,29 +117,16 @@ export default function FolderBar({ space, activeFolder, onFolderChange }) {
         ))}
       </div>
 
-      {/* Folder pills */}
       <div className="folderbar-folders">
         {visibleFolders.map(f => (
-          <div
+          <FolderPill
             key={f.id}
-            className={`folder-pill ${activeFolder?.id === f.id ? 'folder-pill--active' : ''}`}
-          >
-            <button className="folder-pill-name" onClick={() => onFolderChange(f)}>
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M1 3.5C1 2.67 1.67 2 2.5 2H4l1 1.5h3.5C9.33 3.5 10 4.17 10 5v3c0 .83-.67 1.5-1.5 1.5h-7C.67 9.5 1 8.83 1 8V3.5z" stroke="currentColor" strokeWidth="1.1" fill="none"/>
-              </svg>
-              {f.name}
-            </button>
-            <button
-              className="folder-pill-del"
-              title="Delete folder"
-              onClick={(e) => handleDelete(e, f)}
-            >
-              <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                <path d="M1.5 1.5l6 6M7.5 1.5l-6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-            </button>
-          </div>
+            folder={f}
+            isActive={activeFolder?.id === f.id}
+            onSelect={onFolderChange}
+            onRenamed={load}
+            onDeleted={() => { if (activeFolder?.id === f.id) onFolderChange(null); load(); }}
+          />
         ))}
 
         {adding ? (
@@ -94,12 +137,13 @@ export default function FolderBar({ space, activeFolder, onFolderChange }) {
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Folder name"
+              onKeyDown={e => e.key === 'Escape' && setAdding(false)}
             />
             <button type="submit" className="folder-add-confirm">↵</button>
             <button type="button" className="folder-add-cancel" onClick={() => setAdding(false)}>✕</button>
           </form>
         ) : (
-          <button className="folder-add-btn" onClick={() => setAdding(true)} title="New folder">
+          <button className="folder-add-btn" onClick={() => setAdding(true)}>
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
               <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
             </svg>

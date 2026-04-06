@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 // Initialize DB before routes (db.js uses top-level await)
 await import('./db.js');
 
+import spacesRouter from './routes/spaces.js';
 import foldersRouter from './routes/folders.js';
 import linksRouter from './routes/links.js';
 import filesRouter from './routes/files.js';
@@ -17,6 +18,7 @@ const PORT = 3333;
 app.use(cors());
 app.use(express.json());
 
+app.use('/api/spaces', spacesRouter);
 app.use('/api/folders', foldersRouter);
 app.use('/api/links', linksRouter);
 app.use('/api/files', filesRouter);
