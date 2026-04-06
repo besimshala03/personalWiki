@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import TopNav from './components/TopNav';
 import SpaceView from './components/SpaceView';
+import TasksDashboard from './components/TasksDashboard';
 import { getSpaces } from './api';
 
 function hexToRgba(hex, alpha) {
@@ -14,6 +15,8 @@ export default function App() {
   const [spaces, setSpaces] = useState([]);
   const [activeSpace, setActiveSpace] = useState(null);
   const [activeFolder, setActiveFolder] = useState(null);
+  const [activeView, setActiveView] = useState('space');
+  const [taskRefreshToken, setTaskRefreshToken] = useState(0);
 
   const loadSpaces = useCallback(() =>
     getSpaces().then(list => {
@@ -23,7 +26,15 @@ export default function App() {
 
   useEffect(() => { loadSpaces(); }, [loadSpaces]);
 
-  const handleSpaceChange = (id) => { setActiveSpace(id); setActiveFolder(null); };
+  const handleSpaceChange = (id) => {
+    setActiveSpace(id);
+    setActiveFolder(null);
+    setActiveView('space');
+  };
+
+  const handleTasksChanged = useCallback(() => {
+    setTaskRefreshToken(token => token + 1);
+  }, []);
 
   const activeSpaceData = spaces.find(s => s.id === activeSpace);
   const color = activeSpaceData?.color ?? '#818cf8';
@@ -35,16 +46,29 @@ export default function App() {
     <div className="app" style={cssVars}>
       <TopNav
         spaces={spaces}
+        activeView={activeView}
         activeSpace={activeSpace}
         onSpaceChange={handleSpaceChange}
+        onViewChange={setActiveView}
         onSpacesChanged={loadSpaces}
+        taskRefreshToken={taskRefreshToken}
       />
       <main className="main">
-        <SpaceView
-          space={activeSpace}
-          activeFolder={activeFolder}
-          onFolderChange={setActiveFolder}
-        />
+        {activeView === 'tasks' ? (
+          <TasksDashboard
+            spaces={spaces}
+            taskRefreshToken={taskRefreshToken}
+            onTasksChanged={handleTasksChanged}
+          />
+        ) : (
+          <SpaceView
+            space={activeSpace}
+            spaces={spaces}
+            activeFolder={activeFolder}
+            onFolderChange={setActiveFolder}
+            onTasksChanged={handleTasksChanged}
+          />
+        )}
       </main>
     </div>
   );

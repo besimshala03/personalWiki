@@ -10,6 +10,7 @@ import spacesRouter from './routes/spaces.js';
 import foldersRouter from './routes/folders.js';
 import linksRouter from './routes/links.js';
 import filesRouter from './routes/files.js';
+import tasksRouter from './routes/tasks.js';
 import syncRouter from './routes/sync.js';
 import { initializeSync } from './sync.js';
 
@@ -24,6 +25,7 @@ app.use('/api/spaces', spacesRouter);
 app.use('/api/folders', foldersRouter);
 app.use('/api/links', linksRouter);
 app.use('/api/files', filesRouter);
+app.use('/api/tasks', tasksRouter);
 app.use('/api/sync', syncRouter);
 
 // Serve React frontend

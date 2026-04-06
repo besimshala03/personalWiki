@@ -44,6 +44,17 @@ export const uploadFile = (formData) => fetch(`${BASE}/files`, { method: 'POST',
 export const deleteFile = (id) => del(`${BASE}/files/${id}`);
 export const downloadUrl = (id) => `${BASE}/files/${id}/download`;
 
+// Tasks
+export const getTasks = (space, folder_id) => {
+  const p = new URLSearchParams({ space });
+  if (folder_id !== undefined) p.set('folder_id', folder_id ?? 'null');
+  return fetch(`${BASE}/tasks?${p}`).then(json);
+};
+export const getAllTasks = () => fetch(`${BASE}/tasks/all`).then(json);
+export const createTask = (data) => post(`${BASE}/tasks`, data);
+export const updateTask = (id, data) => patch(`${BASE}/tasks/${id}`, data);
+export const deleteTask = (id) => del(`${BASE}/tasks/${id}`);
+
 // Sync
 export const getSyncStatus = () => requestJson(`${BASE}/sync/status`);
 export const saveSyncConfig = (data) => requestJson(`${BASE}/sync/config`, {

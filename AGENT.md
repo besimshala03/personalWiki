@@ -7,7 +7,7 @@ Contributor guide for AI agents working on this codebase.
 ## What this is
 
 A personal wiki that runs locally on macOS, accessible at `http://localhost:3333`.
-It organises bookmarked links and uploaded files into user-defined **spaces**
+It organises bookmarked links, uploaded files, and tasks into user-defined **spaces**
 (e.g. University, Private, Work) and **folders** within those spaces.
 The server auto-starts on login via a macOS LaunchAgent.
 
@@ -24,14 +24,16 @@ wiki/
 │       ├── spaces.js        # CRUD for spaces
 │       ├── folders.js       # CRUD for folders
 │       ├── links.js         # CRUD for links
-│       └── files.js         # Upload / download / delete files
+│       ├── files.js         # Upload / download / delete files
+│       └── tasks.js         # CRUD for tasks + dashboard feed
 ├── client/                  # React + Vite frontend
 │   ├── src/
-│   │   ├── App.jsx          # Root: loads spaces, owns activeSpace/activeFolder state
+│   │   ├── App.jsx          # Root: loads spaces, owns activeSpace/activeFolder/activeView state
 │   │   ├── api.js           # All fetch calls to /api — single source of truth
 │   │   ├── components/
-│   │   │   ├── TopNav.jsx   # Space tabs + space CRUD (create/rename/delete)
-│   │   │   └── SpaceView.jsx # Card grid: folders, links, files; breadcrumb; add forms
+│   │   │   ├── TopNav.jsx   # Space tabs + Tasks tab + space CRUD
+│   │   │   ├── SpaceView.jsx # Card grid: folders, links, files, tasks; breadcrumb; add forms
+│   │   │   └── TasksDashboard.jsx # Cross-space task dashboard grouped by due date
 │   │   └── styles/wiki.css  # Single CSS file — dark design system
 │   └── vite.config.js       # Proxies /api → localhost:3333 in dev mode
 ├── Completed Features/      # Finished feature specs implemented by agents
@@ -72,7 +74,8 @@ agents know it has already been delivered.
   "folders": [{ "id": 1, "name": "Lecture notes", "space": "university", "parent_id": null, "created_at": "…" }],
   "links":   [{ "id": 1, "title": "…", "url": "…", "description": "…", "space": "university", "folder_id": null, "created_at": "…" }],
   "files":   [{ "id": 1, "original_name": "…", "stored_name": "1234-5678.pdf", "mime_type": "…", "size": 12345, "space": "university", "folder_id": null, "created_at": "…" }],
-  "_seq":    { "folders": 0, "links": 0, "files": 0, "spaces": 3 }
+  "tasks":   [{ "id": 1, "title": "Read paper", "space": "university", "folder_id": 1, "due_date": "2026-04-12", "completed": false, "completed_at": null, "created_at": "…" }],
+  "_seq":    { "folders": 0, "links": 0, "files": 0, "tasks": 0, "spaces": 3 }
 }
 ```
 
@@ -80,8 +83,9 @@ Key relationships:
 - `folders.space` → `spaces.id` (string slug, not an integer FK)
 - `folders.parent_id` → `folders.id` or `null` (root-level folder)
 - `links.folder_id` / `files.folder_id` → `folders.id` or `null` (root of space)
-- Deleting a space cascades to its folders, links, and files
-- Deleting a folder cascades recursively to child folders, links, and files
+- `tasks.folder_id` → `folders.id` or `null` (root of space)
+- Deleting a space cascades to its folders, links, files, and tasks
+- Deleting a folder cascades recursively to child folders, links, files, and tasks
 
 All DB mutations live in `server/db.js`. Routes call those functions and never touch `db.data` directly.
 
@@ -123,16 +127,29 @@ All routes are under `/api`. Server listens on port **3333**.
 | GET | `/api/files/:id/download` | — | Download file |
 | DELETE | `/api/files/:id` | — | Delete record + disk file |
 
+### Tasks
+| Method | Path | Body / Query | Description |
+|---|---|---|---|
+| GET | `/api/tasks` | `?space=&folder_id=` | Tasks for space+folder |
+| GET | `/api/tasks/all` | — | All tasks across all spaces for dashboard/badges |
+| POST | `/api/tasks` | `{ title, space, folder_id?, due_date }` | Create task |
+| PATCH | `/api/tasks/:id` | `{ title?, due_date?, completed?, completed_at? }` | Update task |
+| DELETE | `/api/tasks/:id` | — | Delete task |
+
 ---
 
 ## Frontend state
 
-`App.jsx` owns two pieces of global state passed as props:
+`App.jsx` owns four pieces of global state:
 
 - `activeSpace` — string ID of the currently selected space
 - `activeFolder` — folder object `{ id, name, parent_id, … }` or `null` (space root)
+- `activeView` — `'space'` or `'tasks'`
+- `taskRefreshToken` — incremented after task mutations so `TopNav` and `TasksDashboard` can refresh badge/dashboard data
 
-`SpaceView.jsx` fetches data based on these two values and re-fetches after every mutation.
+`SpaceView.jsx` fetches folders, links, files, and tasks for the current `activeSpace` + `activeFolder`.
+`TasksDashboard.jsx` fetches all tasks across spaces and groups them into `Overdue`, `This Week`, `Next Week`, and `Later`.
+`TopNav.jsx` includes a dedicated `Tasks` tab and shows an overdue-task badge.
 
 ---
 

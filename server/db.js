@@ -16,13 +16,14 @@ const defaultData = {
   folders: [],
   links: [],
   files: [],
+  tasks: [],
   sync: {
     enabled: false,
     onedrive_path: '',
     space: 'university',
     last_run: null,
   },
-  _seq: { folders: 0, links: 0, files: 0, spaces: 3 },
+  _seq: { folders: 0, links: 0, files: 0, tasks: 0, spaces: 3 },
 };
 
 export const db = await JSONFilePreset(DB_PATH, defaultData);
@@ -36,6 +37,19 @@ if (!db.data.spaces) {
 
 if (!db.data.sync) {
   db.data.sync = { ...defaultData.sync };
+  await db.write();
+}
+
+if (!db.data.tasks) {
+  db.data.tasks = [];
+  await db.write();
+}
+
+if (!db.data._seq) {
+  db.data._seq = { ...defaultData._seq };
+  await db.write();
+} else if (db.data._seq.tasks === undefined) {
+  db.data._seq.tasks = 0;
   await db.write();
 }
 
@@ -82,6 +96,7 @@ export async function deleteSpace(id) {
   db.data.folders = db.data.folders.filter(f => f.space !== id);
   db.data.links   = db.data.links.filter(l => l.space !== id);
   db.data.files   = db.data.files.filter(f => f.space !== id);
+  db.data.tasks   = db.data.tasks.filter(t => t.space !== id);
   await db.write();
 }
 
@@ -116,6 +131,7 @@ export async function deleteFolder(id) {
   db.data.folders = db.data.folders.filter(f => !toDelete.has(f.id));
   db.data.links   = db.data.links.filter(l => !toDelete.has(l.folder_id));
   db.data.files   = db.data.files.filter(f => !toDelete.has(f.folder_id));
+  db.data.tasks   = db.data.tasks.filter(t => !toDelete.has(t.folder_id));
   await db.write();
 }
 
@@ -196,6 +212,57 @@ export async function deleteFileRecord(id) {
   db.data.files = db.data.files.filter(f => f.id !== id);
   await db.write();
   return file;
+}
+
+// ── Tasks ────────────────────────────────────────────────
+export function getTasks({ space, folder_id }) {
+  return db.data.tasks
+    .filter(task => task.space === space && (folder_id === null ? task.folder_id === null : task.folder_id === folder_id))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+export function getAllTasks() {
+  return [...db.data.tasks].sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    if (a.due_date !== b.due_date) return a.due_date.localeCompare(b.due_date);
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+}
+
+export async function insertTask({ title, space, folder_id = null, due_date }) {
+  const task = {
+    id: nextId('tasks'),
+    title,
+    space,
+    folder_id,
+    due_date,
+    completed: false,
+    completed_at: null,
+    created_at: new Date().toISOString(),
+  };
+  db.data.tasks.push(task);
+  await db.write();
+  return task;
+}
+
+export async function updateTask(id, fields) {
+  const task = db.data.tasks.find(entry => entry.id === id);
+  if (!task) return null;
+
+  if (fields.title !== undefined) task.title = fields.title;
+  if (fields.due_date !== undefined) task.due_date = fields.due_date;
+  if (fields.completed !== undefined) task.completed = fields.completed;
+  if (fields.completed_at !== undefined) task.completed_at = fields.completed_at;
+  if (fields.folder_id !== undefined) task.folder_id = fields.folder_id;
+  if (fields.space !== undefined) task.space = fields.space;
+
+  await db.write();
+  return task;
+}
+
+export async function deleteTask(id) {
+  db.data.tasks = db.data.tasks.filter(task => task.id !== id);
+  await db.write();
 }
 
 export function getFileById(id) {
