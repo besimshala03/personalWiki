@@ -2,45 +2,68 @@
 
 ## Overview
 
-Add a lightweight task tracking system to the wiki. Tasks are created inside folders
-(e.g. a course folder like "Software Engineering") and have a weekly deadline that
-defaults to the upcoming Sunday. A dedicated dashboard tab provides an overview of
-all tasks across all spaces, grouped by due date and completion status.
+Add a lightweight task tracking system to the wiki. Tasks are a new content type,
+similar to folders, links, and files, and can be created explicitly inside any
+space or folder. A dedicated dashboard tab provides an overview of all tasks across
+all spaces, grouped by due date and completion status.
+
+Important clarification:
+- Folders themselves do not become tasks
+- A folder can contain tasks, just like it can contain links and files
+- The dashboard concept stays the same: it shows all tasks across the wiki
 
 ---
 
 ## User-facing behaviour
 
-### Inside a folder (SpaceView)
+### Creating tasks
 
-- A new "Add task" input appears in the folder view alongside the existing add-link
+- Users can create tasks explicitly, just like they can create folders, add links,
+  or upload files
+- Task creation is available in the current space/folder view
+- A task belongs to a space and optionally to a folder
+- Due date defaults to the upcoming Sunday
+- User can optionally pick a different due date during creation
+
+### Inside a folder or space root (`SpaceView`)
+
+- A new "Add task" control appears alongside the existing create-folder, add-link,
   and upload-file controls
-- Tasks are displayed as cards with a checkbox, title, due date, and delete button
+- Tasks are displayed as their own cards in the grid, visually distinct from folders,
+  links, and files
+- Each task card shows:
+  - checkbox
+  - title
+  - due date
+  - delete button
 - Checking the checkbox marks the task completed (strikethrough, dimmed)
-- Completed tasks remain visible until their due date passes, then they can be
-  dismissed or are hidden automatically (see "Completed task visibility" below)
-- Due date defaults to the upcoming Sunday (calculated client-side); user can
-  optionally pick a different date via a date input
+- Completed tasks remain visible in the folder view
+- A "Erledigte anzeigen" toggle in the folder view shows/hides completed tasks
 
 ### Dashboard tab
 
 - A new tab labelled "Tasks" appears in TopNav alongside the space tabs
 - The dashboard shows all tasks across all spaces, grouped into sections:
-  - **Überfällig** — incomplete tasks whose due_date < today (red highlight)
+  - **Überfällig** — incomplete tasks whose due_date < today
   - **Diese Woche** — due_date is within the current Mon–Sun week
   - **Nächste Woche** — due_date is next Mon–Sun week
   - **Später** — everything beyond next week
 - Within each section, tasks are grouped by space + folder name
-- Each task row shows: checkbox, title, folder breadcrumb, due date, days remaining
+- Each task row shows:
+  - checkbox
+  - title
+  - folder breadcrumb
+  - due date
+  - days remaining
 - Checking a task on the dashboard also marks it complete everywhere
 - Completed tasks are shown collapsed under a "X erledigt" toggle per section
 
 ### Completed task visibility
 
 - Completed tasks are not deleted automatically
-- They are hidden from the "Diese Woche" section after their due date passes
-- They remain accessible via the folder view indefinitely (dimmed)
-- A "Erledigte anzeigen" toggle in the folder view shows/hides them
+- They are hidden from the main incomplete dashboard groups once completed
+- They remain accessible in the folder view when "Erledigte anzeigen" is enabled
+- They remain accessible in the dashboard via the collapsed completed section
 
 ---
 
@@ -56,7 +79,7 @@ Add a `tasks` array to `wiki.json` (managed via `server/db.js`):
       "title": "Übungsblatt 3 abgeben",
       "space": "university",
       "folder_id": 7,           // null = root of space
-      "due_date": "2026-04-13", // ISO date string, always a Sunday by default
+      "due_date": "2026-04-13", // ISO date string, defaults to upcoming Sunday
       "completed": false,
       "completed_at": null,     // ISO timestamp or null
       "created_at": "2026-04-06T12:00:00.000Z"
@@ -66,6 +89,9 @@ Add a `tasks` array to `wiki.json` (managed via `server/db.js`):
 ```
 
 Add `"tasks": 0` to the `_seq` counter object.
+
+Tasks are their own records. They are not derived from folders, and no folder-level
+"mark as task" concept should exist.
 
 ---
 
@@ -80,12 +106,14 @@ Add `"tasks": 0` to the `_seq` counter object.
 | DELETE | `/api/tasks/:id` | — | Delete task |
 
 Mount in `server/index.js`:
+
 ```js
 import tasksRouter from './routes/tasks.js';
 app.use('/api/tasks', tasksRouter);
 ```
 
-All DB mutations must go through `server/db.js` — routes must not touch `db.data` directly.
+All DB mutations must go through `server/db.js` — routes must not touch `db.data`
+directly.
 
 ---
 
@@ -93,15 +121,18 @@ All DB mutations must go through `server/db.js` — routes must not touch `db.da
 
 ```js
 getTasks(space, folderId)       // used by GET /api/tasks
-getAllTasks()                    // used by GET /api/tasks/all
+getAllTasks()                   // used by GET /api/tasks/all
 insertTask({ title, space, folder_id, due_date })
 updateTask(id, fields)          // partial update
 deleteTask(id)
 ```
 
-Cascade: when a folder is deleted, delete all tasks with that `folder_id`.
-When a space is deleted, delete all tasks with that `space`.
-Update the existing `deleteFolder` and `deleteSpace` functions in `db.js` accordingly.
+Cascade:
+- when a folder is deleted, delete all tasks with that `folder_id`
+- when a space is deleted, delete all tasks with that `space`
+
+Update the existing `deleteFolder` and `deleteSpace` functions in `db.js`
+accordingly.
 
 ---
 
@@ -121,28 +152,25 @@ export const deleteTask = (id) => ...
 
 - Fetches all tasks via `getAllTasks()` on mount and after every mutation
 - Groups and renders tasks as described in "Dashboard tab" above
-- Uses a `<input type="checkbox">` for completion toggle
+- Uses an `<input type="checkbox">` for completion toggle
 - Shows folder breadcrumb as `Space › Folder` using space name + folder name
   (resolve names from props passed down from App.jsx)
-- "Überfällig" tasks get a red left border using `--accent` override or a dedicated
-  CSS class `.task-overdue`
+- Overdue tasks get a dedicated visual treatment
 
 ### `client/src/components/SpaceView.jsx` — modifications
 
-- After the existing add-link form, add an "Add task" inline form:
-  - Text input for title (required)
-  - Date input for due_date (default = next Sunday, `type="date"`)
-  - Submit button
-- Render tasks as cards in the card grid, visually distinct from links and files:
-  - Checkbox on the left
-  - Title (strikethrough + dimmed if completed)
-  - Due date chip (red if overdue)
-  - Delete button (×)
+- Add an "Add task" inline form near the existing create actions:
+  - text input for title (required)
+  - date input for due_date (default = next Sunday, `type="date"`)
+  - submit button
+- Render tasks as cards in the card grid, visually distinct from folders, links,
+  and files
 - Fetch tasks alongside links and files; re-fetch after every mutation
+- Add a toggle to show/hide completed tasks in the current view
 
 ### `client/src/components/TopNav.jsx` — modifications
 
-- Add a "Tasks" tab after the space tabs (always visible, not a space)
+- Add a "Tasks" tab after the space tabs
 - Clicking it sets a new `activeView = 'tasks'` state in `App.jsx`
 - Show a small badge with the count of incomplete overdue tasks if > 0
 
@@ -173,13 +201,13 @@ export function nextSunday() {
 ## CSS additions (`client/src/styles/wiki.css`)
 
 Add styles for:
-- `.task-card` — card variant for tasks (same base as `.card` but with checkbox layout)
+- `.task-card` — card variant for tasks
 - `.task-card.completed .task-title` — `text-decoration: line-through; opacity: 0.45`
-- `.task-due` — small date chip, uses `--t3` color
-- `.task-due.overdue` — red tint, use a semi-transparent red (do not hardcode hex, use `rgba`)
+- `.task-due` — small date chip
+- `.task-due.overdue` — overdue visual state
 - `.task-section` — dashboard section heading
 - `.task-row` — single task row in the dashboard
-- `.task-badge` — small red circle badge on the Tasks tab
+- `.task-badge` — small badge on the Tasks tab
 
 Do not hardcode colour values. Use existing CSS custom properties where possible.
 
@@ -237,10 +265,11 @@ id=9  Seminar: Large Language Models           parent_id=3
 
 No automated test suite. Verify manually:
 
-1. Open a course folder → add a task → confirm it appears as a card with checkbox
-2. Check the checkbox → confirm strikethrough and `completed_at` is set
-3. Open Tasks dashboard → confirm task appears under "Diese Woche"
-4. Create a task with a past due_date → confirm it appears under "Überfällig" in red
-5. Delete a folder → confirm its tasks are gone from the dashboard
-6. "Erledigte anzeigen" toggle in folder view shows/hides completed tasks
-7. Badge on Tasks tab shows count of overdue incomplete tasks
+1. Open a course folder and add a task
+2. Confirm it appears as a task card with checkbox and due date
+3. Check the checkbox and confirm it becomes completed
+4. Open the Tasks dashboard and confirm the task appears in the correct section
+5. Create a task with a past due_date and confirm it appears under "Überfällig"
+6. Delete a folder and confirm its tasks are gone from the dashboard
+7. Use "Erledigte anzeigen" in folder view and confirm completed tasks can be toggled
+8. Confirm the Tasks tab badge shows the count of incomplete overdue tasks
