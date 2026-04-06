@@ -30,7 +30,7 @@ export default function App() {
   const color = activeSpaceData?.color ?? '#818cf8';
   const cssVars = { '--accent': color, '--accent-bg': hexToRgba(color, 0.07) };
 
-  if (!activeSpace) return null;
+  if (!activeSpace) return <div className="app-loading">Loading…</div>;
 
   return (
     <div className="app" style={cssVars}>

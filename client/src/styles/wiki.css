@@ -730,6 +730,8 @@ a.card-title:hover { color: var(--accent); }
 .empty-title { font-size: 14px; font-weight: 600; color: var(--t2); }
 .empty-sub { font-size: 12px; }
 
+.app-loading { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--t3); font-size: 13px; }
+
 /* ── Scrollbar ────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
